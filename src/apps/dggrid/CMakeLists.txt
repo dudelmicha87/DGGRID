@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.20)
 
-add_executable(dggrid
+
+set(DGGRID_SOURCES
    DgHexSF.cpp
    OpBasic.cpp
    SubOpBasic.cpp
@@ -18,22 +19,13 @@ add_executable(dggrid
    dggrid.cpp
 )
 
+
+add_executable(dggrid
+${DGGRID_SOURCES}
+)
+
 add_library(dggridlib
-   DgHexSF.cpp
-   OpBasic.cpp
-   SubOpBasic.cpp
-   SubOpBasicMulti.cpp
-   SubOpBinPts.cpp
-   SubOpDGG.cpp
-   SubOpGen.cpp
-   SubOpGenHelper.cpp
-   SubOpIn.cpp
-   SubOpMain.cpp
-   SubOpOut.cpp
-   SubOpStats.cpp
-   SubOpTransform.cpp
-   clipper.cpp
-   dggrid.cpp
+${DGGRID_SOURCES}   
 )
 
 if(GDAL_FOUND)
