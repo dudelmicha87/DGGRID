@@ -36,7 +36,7 @@ add_subdirectory(src/lib/dgaplib)
 add_subdirectory(src/lib/proj4lib)
 # add_subdirectory(src/lib/shapelib)
 
-add_subdirectory(src/apps/dggrid)
+
 add_subdirectory(src/apps/appex)
 
 if(DOXYGEN_FOUND)

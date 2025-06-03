@@ -28,9 +28,9 @@
 using namespace std;
 
 #include <dglib/DgIDGGS4H.h>
-
+#include "apexFuncs.h"
 ////////////////////////////////////////////////////////////////////////////////
-int main (int, char**)
+int doSomething (void)
 {
    ///// create the DGG /////
 
