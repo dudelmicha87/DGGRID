@@ -97,5 +97,37 @@ int doSomething (void)
    return 0;
 
 }
+
+extern "C" {
+
+     unsigned long long int  doSomething2 (void)
+     {
+     ///// create the DGG /////
+
+     // create the reference frame (RF) conversion network
+     DgRFNetwork net0;
+
+     // create the geodetic reference frame
+     // reference frames must be created dynamically using makeRF
+     // they will be deleted by the Network
+     const DgGeoSphRF& geoRF = *(DgGeoSphRF::makeRF(net0, "GS0"));
+
+     // create the ISEA4H grid system with resolutions 0-9; requires a
+     // fixed icosahedron vertex and edge azimuth
+     DgGeoCoord vert0(11.25L, 58.28252559L, false); // args: lon, lat, isRadians
+     long double azimuth = 0.0L;
+
+     // all DGGS's must be created using a factory makeRF method
+     // the DGGS is memory managed by the DgRFNetwork
+     const DgIDGGS4H* idggsPtr = DgIDGGS4H::makeRF(net0, geoRF, vert0, azimuth, 10);
+     const DgIDGGS4H& idggs = *idggsPtr;
+
+     // get the resolution 7 dgg from the dggs
+     const DgIDGG& dgg = idggs.idgg(7);
+     // cout << dgg.gridStats() << endl;
+
+     return dgg.gridStats().nCells();
+     }
+} 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
