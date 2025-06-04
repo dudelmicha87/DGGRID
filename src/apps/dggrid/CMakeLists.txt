@@ -24,7 +24,7 @@ add_executable(dggrid
 ${DGGRID_SOURCES}
 )
 
-add_library(dggridlib
+add_library(dggridlib SHARED
 ${DGGRID_SOURCES}   
 )
 

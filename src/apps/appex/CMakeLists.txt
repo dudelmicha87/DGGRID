@@ -10,11 +10,11 @@ add_executable(appex
 ${APPEX_SOURCES}
 appexmain.cpp)
 
-add_library(appexlib
+add_library(appexlib SHARED
 ${APPEX_SOURCES}
 )
 
-target_link_libraries(appex PRIVATE dglib)
-target_compile_features(appex PRIVATE cxx_std_11)
-target_link_libraries(appexlib PRIVATE dglib)
-target_compile_features(appexlib PRIVATE cxx_std_11)
+target_link_libraries(appex PUBLIC dglib)
+target_compile_features(appex PUBLIC cxx_std_11)
+target_link_libraries(appexlib PUBLIC dglib)
+target_compile_features(appexlib PUBLIC cxx_std_11)
