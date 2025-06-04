@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.20)
 
-add_library(dglib
+add_library(dglib SHARED
   lib/DgAddressBase.cpp
   lib/DgAddressType.cpp
   lib/DgApSeq.cpp
