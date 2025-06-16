@@ -25,20 +25,20 @@
 
 #include <cstddef>
 #include <iostream>
+#include <nanoarrow/nanoarrow.h>
+#include <stdio.h>
 
 using namespace std;
 
 #include "appex.h"
+#include <Python.h>
 #include <dglib/DgIDGGS3H.h>
 #include <dglib/DgIDGGS4H.h>
 #include <dglib/DgIDGGS7H.h>
 #include <geoarrow/geoarrow.hpp>
 #include <limits.h>
 #include <map>
-#include <nanoarrow/nanoarrow.h>
-#include <stdio.h>
 #include <vector>
-#include <Python.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 int doSomething(void) {
@@ -211,135 +211,69 @@ unsigned long long int doSomething2(void) {
 
   return nCells(idggkey);
 }
-void process_arrow_table(struct ArrowSchema *schema, struct ArrowArray *array) {
-  // Process the Arrow data
-  printf("Received table with %ld columns, %ld rows\n", schema->n_children,
-         array->length);
 
-  // Print data contents
-  for (int i = 0; i < array->length; i++) {
-    // Access and print row data
-    printf("Row %d: ...\n", i);
-  }
-}
-
-void process_arrow_table2(struct ArrowSchema *schema,
-                          struct ArrowArray **arrays, int len) {
-  for (int i = 0; i < 3; i++) {
-    struct ArrowArray *array = arrays[i];
-    // Process the Arrow data
-    printf("Received table with %ld columns, %ld rows\n", schema->n_children,
-           array->length);
-
-    // Print data contents
-    for (int i = 0; i < array->length; i++) {
-      // Access and print row data
-      printf("Row %d: ...\n", i);
-    }
-  }
-}
-
-void inspect_with_nanoarrow(struct ArrowArray *array,
-                            struct ArrowSchema *schema) {
-  struct ArrowArrayView array_view;
-  struct ArrowSchemaView schema_view;
-
-  printf("Length: %ld\n", array_view.array->length);
-  // printf("Schema format: %s\n", schema->format);
-
-  // For string-based types (like WKT/WKB), print data as strings
-  if (array_view.storage_type == NANOARROW_TYPE_STRING ||
-      array_view.storage_type == NANOARROW_TYPE_BINARY) {
-    for (int64_t i = 0; i < array_view.array->length; i++) {
-      if (ArrowArrayViewIsNull(&array_view, i)) {
-        printf("Row %ld: NULL\n", i);
-      } else {
-        struct ArrowBufferView view;
-        ArrowArrayViewGetBytesUnsafe(&array_view, i);
-        printf("Row %ld: %.*s\n", i, (int)view.size_bytes,
-               (const char *)view.data.data);
-      }
-    }
-  } else {
-    printf("Unsupported type for printing\n");
-  }
-}
-
-#include <nanoarrow/nanoarrow.h>
-#include <stdio.h>
-#define MAX_WKT_LEN 512
-
-static struct ArrowError global_error;
-
-void print_arrow_array_view(struct ArrowArrayView *array_view) {
-  if (!array_view) {
-    printf("Invalid ArrowArrayView\n");
+void print_arrow_table(struct ArrowArrayStream *stream) {
+  if (!stream) {
+    printf("Failed to extract ArrowArrayStream\n");
     return;
   }
 
-  printf("Array length: %lld\n", (long long)array_view->length);
-  printf("Number of buffers: %d\n", array_view->array->n_buffers);
+  // Retrieve schema
+  struct ArrowSchema schema;
 
-  // Iterate over buffers manually
-  for (int i = 0; i <= array_view->array->n_buffers; i++) {
-    if (array_view->array->buffers[i] != NULL) {
-      printf("Buffer %d: %p\n", i, array_view->array->buffers[i]);
+  if (stream->get_schema(stream, &schema) != NANOARROW_OK) {
+    fprintf(stderr, "Failed to get schema from stream\n");
+    return;
+  } else {
+    printf("Schema format: %s\n", schema.format);
+  }
 
-      // Example: Print first few bytes (assuming int32 data in buffer 1)
-      if (i == 1) {
-        int32_t *data = (int32_t *)array_view->array->buffers[i];
-        printf("First value: %d\n", data[0]);
-
-        for (int64_t j = 0; j < array_view->length; j++) {
-          printf("%d ", data[j]);
-        }
-        printf("\n");
-      }
-    } else {
-      printf("Buffer %d is NULL\n", i);
+  if (schema.n_children != 2) {
+    fprintf(stderr, "Expected 2 children for a string schema, got %d\n",
+            schema.n_children);
+    if (schema.release) {
+      schema.release(&schema);
     }
+    return;
+  }
+
+  // Release the schema for now if you will get it again with each batch;
+  // otherwise, keep a copy for use with each array. This depends on your
+  // design.
+  if (schema.release) {
+    schema.release(&schema);
+  }
+  struct ArrowArray array;
+  int i = 0;
+  // Now iterate through the stream arrays.
+  while (stream->get_next(stream, &array) == NANOARROW_OK && array.release != nullptr) {
+
+    if (array.length == 0) {
+      // The array is empty.
+      printf("Received an empty array.\n");
+      array.release(&array);
+      continue; // or return, as appropriate
+    } else {
+      printf("array.length: %d.\n", array.length);
+      printf("array[%d]: children %d buffers %d.\n", i, array.n_children,
+             array.n_buffers);
+      for (int64_t j = 0; j < array.n_children; j++) {
+        struct ArrowArray child = *array.children[j];
+        printf("array[%d][%d]: children %d buffers %d.\n", i, j,
+               child.n_children, child.n_buffers);
+
+        int64_t *data = (int64_t *)child.buffers[1];
+        printf("Value %d\n" , data[0]);
+        printf("Value %d\n" , data[1]);
+        printf("Value %d\n" , data[2]);
+      }
+    }
+    i++;
+    if (array.release) {
+      array.release(&array);
+    }    
   }
 }
-  void print_arrow_table7(PyObject * capsule) {
-    struct ArrowArrayStream *stream =
-        (struct ArrowArrayStream *)PyCapsule_GetPointer(capsule,
-                                                        "arrow_array_stream");
-    if (!stream) {
-      printf("Failed to extract ArrowArrayStream\n");
-      return;
-    }
-
-    // Retrieve schema
-    struct ArrowSchema schema;
-    if (stream->get_schema(stream, &schema) == 0) {
-      printf("Schema format: %s\n", schema.format);
-    }
-
-    // Iterate over stream
-    struct ArrowArray array;
-    while (stream->get_next(stream, &array) == 0 ) {
-      printf("Chunk with %lld rows:\n", array.length);
-
-      // Example: Print first buffer (assuming int32 data)
-      //if (array.n_buffers > 1 && array.buffers[1] != NULL) {
-        ArrowArray *data = (ArrowArray *)array.buffers[1];
-        printf("First value: %d\n", data[0]);
-
-        for (int64_t i = 0; i < array.length; i++) {
-          printf("%d ", data[i]);
-        }
-        printf("\n");
-     // }
-
-      if (array.release == NULL ) 
-        break;
-      // Release chunk
-      array.release(&array);
-    }
-    // Release schema and stream
-    schema.release(&schema);
-    stream->release(stream);
-  }
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
