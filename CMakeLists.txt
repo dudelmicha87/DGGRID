@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.20)
-
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-Bsymbolic")
 project (dggrid
   VERSION 8.36
   LANGUAGES C CXX

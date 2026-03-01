@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.20)
 
-add_library(shapelib
+add_library(shapelib SHARED
   lib/dbfopen.c
   lib/safileio.c
   lib/sbnsearch.c
